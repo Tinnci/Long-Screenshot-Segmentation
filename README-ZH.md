@@ -1,108 +1,177 @@
-[![PyPI - Version](https://img.shields.io/pypi/v/Web_page_Screenshot_Segmentation)](https://pypi.org/project/Web_page_Screenshot_Segmentation/) [![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Tim-Saijun/Web-page-Screenshot-Segmentation/python-publish.yml)](https://github.com/Tim-Saijun/Web-page-Screenshot-Segmentation/actions/workflows/python-publish.yml)[![PyPI - License](https://img.shields.io/pypi/l/Web_page_Screenshot_Segmentation)](https://pypi.org/project/Web_page_Screenshot_Segmentation/)   [![Static Badge](https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-8A2BE2)](README-ZH.md) [![Static Badge](https://img.shields.io/badge/English-blue)](README.md)
+# 网页长截图分割工具
 
-## 介绍
-该项目用于根据文本的高度将网页的长截图分割成几个部分。主要思想是找到图像的低变化区域，然后在低变化区域中找到分割线。
-![红线是分割线](images/demo.png)
-输出的是网页的小而完整的图像，可以用于使用[Screen-to-code](https://github.com/abi/screenshot-to-code)生成网页或训练模型。
-更多结果可以在[images](images)目录中找到。
+[![PyPI - Version](https://img.shields.io/pypi/v/Web_page_Screenshot_Segmentation)](https://pypi.org/project/Web_page_Screenshot_Segmentation/)
+[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Tinnci/Long-Screenshot-Segmentation/python-publish.yml)](https://github.com/Tinnci/Long-Screenshot-Segmentation/actions/workflows/python-publish.yml)
+[![PyPI - License](https://img.shields.io/pypi/l/Web_page_Screenshot_Segmentation)](https://pypi.org/project/Web_page_Screenshot_Segmentation/)
+[![Static Badge](https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-8A2BE2)](README-ZH.md)
+[![Static Badge](https://img.shields.io/badge/English-blue)](README.md)
 
-## 开始使用
-### 安装
-```
- pip install Web-page-Screenshot-Segmentation
-```
+## 项目介绍
 
-## 在命令行中使用
-获取图像的分割线的高度
+本项目用于将网页的长截图自动分割成多个完整的小图像。通过检测图像中的**空白区域**和**颜色变化**来识别分割点，适合用于：
+
+- 使用 [screenshot-to-code](https://github.com/abi/screenshot-to-code) 等工具生成网页代码
+- 为机器学习模型准备训练数据
+- 将长网页截图分割成可管理的块
+
+![红线为分割线](images/demo.png)
+
+**更多示例见** [images](images) 目录
+
+## 分割原理
+
+### 1. 空白区域检测
+计算图像每一行像素的**拉普拉斯方差**，低方差表示该行像素变化少（空白区域），作为潜在分割点。
+
+### 2. 颜色变化检测
+计算相邻行之间的**颜色差异**，大的颜色差异表示视觉分离，作为潜在分割点。
+
+### 3. 合并分割点
+过滤距离过近的分割点，避免过度分割，确保每个分割区域都有意义。
+
+## 安装
+
+### 使用 pip
 ```bash
-python -m Web_page_Screenshot_Segmentation.master -f "path/to/img"
+pip install Web-page-Screenshot-Segmentation
 ```
-输出应该是个列表:` [6, 868, 1912, 2672, 3568, 4444, 5124, 6036, 7698] `。它是图像分割线的高度列表。
-如果你想在图中显示这条分割线，可以加上` -s True`参数：
+
+### 使用 uv（推荐）
 ```bash
-python -m Web_page_Screenshot_Segmentation.master -f "path/to/img" -s True
+uv tool install Web-page-Screenshot-Segmentation
 ```
 
-### 在图像中画出分割线
+### 从源码安装
 ```bash
-python -m Web_page_Screenshot_Segmentation.drawer --image_file path/to/image.jpg --hl [100,200] --color (0,255,0)
+git clone https://github.com/Tinnci/Long-Screenshot-Segmentation.git
+cd Long-Screenshot-Segmentation
+uv venv
+.venv\Scripts\activate  # Windows
+# 或 source .venv/bin/activate  # Linux/macOS
+uv pip install -e .
 ```
 
-### 切分图像
+## 命令行使用
+
+### screenshot-segment（获取分割点）
+
 ```bash
-python -m Web_page_Screenshot_Segmentation.spliter --f path/to/image.jpg -ht "[233,456]"
-```
-你将得到分割图像，保存在命令返回的路径中。
+# 获取分割线高度
+screenshot-segment -f "C:\path\to\image.png"
+# 输出: [818, 1680, 2264, 2745, 4036, 5407, 6210, 6678, 7345, 7856, 8543, 9245, 10504, 11512]
 
-更多用法解释请参照帮助：
+# 保存带有分割线的图像
+screenshot-segment -f "C:\path\to\image.png" -s True
+
+# 自定义阈值
+screenshot-segment -f "C:\path\to\image.png" \
+  -ht 150 \
+  -vt 0.3 \
+  -ct 120 \
+  -mt 400
+```
+
+**参数说明：**
+- `-f, --file`: 图像文件路径
+- `-s, --split`: 是否保存分割后的图像（默认: False）
+- `-o, --output_dir`: 输出目录（默认: result）
+- `-ht, --height_threshold`: 空白区域高度阈值（默认: 102）
+- `-vt, --variation_threshold`: 变化阈值（默认: 0.5）
+- `-ct, --color_threshold`: 颜色差异阈值（默认: 100）
+- `-cvt, --color_variation_threshold`: 颜色差异变化阈值（默认: 15）
+- `-mt, --merge_threshold`: 分割点合并距离（默认: 350）
+
+### screenshot-draw（绘制分割线）
+
 ```bash
-python master.py --help
-python spliter.py --help
+screenshot-draw --image_file path/to/image.jpg --heights 100 200 300 --color 0,255,0
 ```
 
-## 从源码使用
-### split_heights 函数
+### screenshot-split（切分图像）
 
-`split_heights` 函数用于根据各种阈值将图像分割成几个部分。它接受以下参数：
+```bash
+screenshot-split --image_file path/to/image.jpg --heights 233 456 789
+```
 
-- `file_path`: 图像文件的路径。
-- `split`: 一个布尔值，指示是否分割图像。
-- `height_threshold`: 低变化区域的高度阈值。
-- `variation_threshold`: 低变化区域的变化阈值。
-- `color_threshold`: 颜色差异的阈值。
-- `color_variation_threshold`: 颜色差异变化的阈值。
-- `merge_threshold`: 两条线之间最小距离的阈值。
+## Python API 使用
 
-如果 `split` 是 `False`，函数返回分割线的高程列表；如果 `split` 是 `True`，则返回分割图像的路径。
-
-#### 示例用法
+### 方法 1: split_heights（推荐）
 
 ```python
-import Web_page_Screenshot_Segmentation
 from Web_page_Screenshot_Segmentation.master import split_heights
 
-# 在 'path/to/image.jpg' 分割图像为几个部分
-split_image_path = split_heights(
-    file_path='path/to/image.jpg',
+# 获取分割点
+heights = split_heights("my_screenshot.png")
+print(heights)  # [100, 200, 300, ...]
+
+# 保存带分割线的图像
+result_path = split_heights(
+    "my_screenshot.png",
     split=True,
+    output_dir="result",
     height_threshold=102,
     variation_threshold=0.5,
     color_threshold=100,
     color_variation_threshold=15,
     merge_threshold=350
 )
-
-print(f"分割后的图像保存在 {split_image_path}")
+print(f"图像已保存到: {result_path}")
 ```
 
-在这个例子中，根据提供的阈值，'path/to/image.jpg' 的图像被分割成几个部分。分割后的图像保存在函数返回的路径。
-
-### draw_line_from_file 函数
-
-`draw_line_from_file` 函数用于在指定高度的图像上绘制线条。它接受以下参数：
-
-- `image_file`: 图像文件的路径。
-- `heights`: 在指定高度绘制线条的高程列表。
-- `color`: 线条的颜色。默认颜色为红色 `(0, 0, 255)`。
-
-该函数从提供的文件路径读取图像，在指定的高度绘制线条，然后将修改后的图像保存到新文件中。新文件保存在 `result` 目录下，与原始文件同名，但在文件扩展名前添加了 'result'。
-
-如果函数在读取图像文件时遇到错误（例如，如果文件路径包含 '.' 或中文字符），则会抛出异常。
-
-#### 示例用法
+### 方法 2: draw_line_from_file（绘制分割线）
 
 ```python
-import Web_page_Screenshot_Segmentation
-from Web_page_Screenshot_Segmentation.spliter import draw_line_from_file
+from Web_page_Screenshot_Segmentation.drawer import draw_line_from_file
 
-# 在 'path/to/image.jpg' 的图像上，在高度 100 和 200 处绘制线条
-result_image_path = draw_line_from_file(
-    image_file='path/to/image.jpg',
-    heights=[100, 200],
-    color=(0, 255, 0)  # 以绿色绘制线条
+result_path = draw_line_from_file(
+    image_file="my_screenshot.png",
+    heights=[100, 200, 300],
+    color=(0, 255, 0)  # BGR 格式: 绿色
 )
-
-print(f"修改后的图像保存在 {result_image_path}")
+print(f"图像已保存到: {result_path}")
 ```
 
-在这个例子中，'path/to/image.jpg' 的图像被修改，以在高度 100 和 200 处绘制绿色线条。修改后的图像保存在函数返回的路径。
+### 方法 3: split_and_save_image（分割图像）
+
+```python
+import cv2
+from Web_page_Screenshot_Segmentation.spliter import split_and_save_image
+
+image = cv2.imread("my_screenshot.png")
+result_dir = split_and_save_image(
+    image,
+    heights=[868, 1912, 2672],
+    output_dir="split_images"
+)
+print(f"分割图像已保存到: {result_dir}")
+```
+
+## 特性
+
+✅ **Unicode 文件名支持** — 支持中文、日文等非 ASCII 文件名  
+✅ **灵活的阈值参数** — 可根据需求调整分割敏感度  
+✅ **多种输出格式** — 支持获取分割点、绘制分割线或直接切分  
+✅ **跨平台兼容** — Windows、Linux、macOS 完全支持  
+
+## 测试
+
+```bash
+# 安装开发依赖
+uv pip install -e ".[dev]"
+
+# 运行所有测试
+pytest -v
+
+# 生成覆盖率报告
+pytest --cov=Web_page_Screenshot_Segmentation --cov-report=html
+```
+
+详见 [README_TESTING.md](README_TESTING.md)
+
+## 贡献
+
+欢迎提交 Issue 或 Pull Request！
+
+## 致谢
+
+本项目基于 [Tim-Saijun](https://github.com/Tim-Saijun) 的原始项目进行优化和改进。
