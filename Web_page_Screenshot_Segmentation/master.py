@@ -47,9 +47,9 @@ def auto_crop_image(
     """
     Automatically crops blank/white areas from left and right edges using OpenCV.
 
-    This function uses OpenCV's morphological operations and contour detection to
-    intelligently identify and remove blank (white or near-white) areas from the left
-    and right sides of an image. This is more robust than simple threshold detection.
+    This function uses OpenCV's morphological operations to intelligently identify
+    and remove blank (white or near-white) areas from the left and right sides of an image.
+    Conservative approach: tolerates some blank space to avoid cropping actual content.
 
     :param image: The input image as a NumPy array (BGR format).
     :param threshold: Pixel value threshold for detecting blank areas (0-255).
@@ -66,39 +66,46 @@ def auto_crop_image(
     else:
         gray = image.copy()
 
-    # Create binary mask: white/blank areas are foreground (255)
-    _, binary = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
+    # Use Otsu's threshold for automatic thresholding - more robust
+    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-    # Use morphological operations to clean up noise
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 5))
-    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=1)
-    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=1)
+    # Invert so content (dark) is white for easier detection
+    binary = cv2.bitwise_not(binary)
 
-    # Find contours to detect content regions
-    contours, _ = cv2.findContours(
-        cv2.bitwise_not(binary), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
+    # Apply morphological operations with vertical kernel for vertical content preservation
+    kernel_v = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 15))
+    
+    # Dilate to merge nearby content
+    binary = cv2.dilate(binary, kernel_v, iterations=3)
 
-    if not contours:
+    # Analyze columns: sum pixels vertically to get column weights
+    col_sums = np.sum(binary, axis=0)
+    
+    # Use a very conservative threshold - only crop columns that are completely blank
+    # Set threshold to 10% of max to be very lenient
+    col_threshold = np.max(col_sums) * 0.10
+    
+    # Find columns with significant content
+    content_cols = np.where(col_sums > col_threshold)[0]
+
+    if len(content_cols) == 0:
         # No content found, return original
         return image
 
-    # Get bounding boxes of all contours and find the leftmost and rightmost
-    x_coords = []
-    for contour in contours:
-        x, y, w, h = cv2.boundingRect(contour)
-        if w > 0 and h > 0:  # Valid contour
-            x_coords.append(x)
-            x_coords.append(x + w)
-
-    if not x_coords:
-        return image
-
-    left = max(0, min(x_coords))
-    right = min(image.shape[1], max(x_coords))
+    left = max(0, content_cols[0])
+    right = min(image.shape[1], content_cols[-1] + 1)
 
     # Ensure minimum width
     if right - left < min_width:
+        return image
+
+    # Additional safety: only crop if we're removing at least 5 pixels on each side
+    # to avoid cropping for minor imperfections
+    left_margin = left
+    right_margin = image.shape[1] - right
+    
+    if left_margin < 5 and right_margin < 5:
+        # Not enough blank margin, keep original
         return image
 
     return image[:, left:right]

@@ -74,3 +74,12 @@ output/
 temp/
 tmp/
 *.tmp
+segments/
+segments_*/
+images/*.png
+images/*.jpg
+images/*.jpeg
+images/*.webp
+images/*.bmp
+images/*.gif
+
