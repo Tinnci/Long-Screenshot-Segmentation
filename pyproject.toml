@@ -21,11 +21,18 @@ keywords = ["opencv", "website", "image segementation", "screenshot", "gpt"]
 dependencies = [
     "opencv-python",
     "numpy",
+    "Pillow",
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/Tinnci/Long-Screenshot-Segmentation"
 "Documentation" = "https://tim-saijun.github.io/Web_page_Screenshot_Segmentation/"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
 
 [project.scripts]
 screenshot-segment = "Web_page_Screenshot_Segmentation.master:main"
@@ -34,3 +41,16 @@ screenshot-split = "Web_page_Screenshot_Segmentation.spliter:main"
 
 [tool.setuptools]
 packages = ["Web_page_Screenshot_Segmentation"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["test"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "slow: Slow running tests",
+]

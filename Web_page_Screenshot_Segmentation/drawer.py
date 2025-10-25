@@ -20,9 +20,11 @@ def draw_line_from_file(
     :return: The absolute path to the saved image.
     """
     try:
-        image = cv2.imread(image_file)
+        # Read image as a byte stream to handle non-ASCII file paths
+        img_data = np.fromfile(image_file, np.uint8)
+        image = cv2.imdecode(img_data, cv2.IMREAD_COLOR)
         if image is None:
-            raise FileNotFoundError(f"Image not found at path: {image_file}")
+            raise FileNotFoundError(f"Image not found or could not be decoded at path: {image_file}")
     except Exception as e:
         raise IOError(f"Failed to read image file: {e}")
 

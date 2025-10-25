@@ -1,6 +1,7 @@
 import cv2
 import os
 import argparse
+import numpy as np
 from .blank_spliter import find_height_spliter
 from .color_spliter import color_height_spliter
 from .drawer import draw_line
@@ -67,10 +68,13 @@ def split_heights(
     :param merge_threshold: The minimum distance between two split lines.
     :return: A list of split line heights or the path to the split image.
     """
+    print(f"Debug: file_path received: {file_path}")
     try:
-        img = cv2.imread(file_path)
+        # Read image as a byte stream to handle non-ASCII file paths
+        img_data = np.fromfile(file_path, np.uint8)
+        img = cv2.imdecode(img_data, cv2.IMREAD_COLOR)
         if img is None:
-            raise FileNotFoundError(f"Image not found at path: {file_path}")
+            raise FileNotFoundError(f"Image not found or could not be decoded at path: {file_path}")
     except Exception as e:
         raise IOError(f"Failed to read image file: {e}")
 

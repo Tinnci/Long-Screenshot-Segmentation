@@ -4,3 +4,12 @@ result
 .idea/
 build/
 Web_page_Screenshot_Segmentation.egg-info/
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage
