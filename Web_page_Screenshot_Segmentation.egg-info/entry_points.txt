@@ -1,4 +1,0 @@
-[console_scripts]
-screenshot-draw = Web_page_Screenshot_Segmentation.drawer:main
-screenshot-segment = Web_page_Screenshot_Segmentation.master:main
-screenshot-split = Web_page_Screenshot_Segmentation.spliter:main
