@@ -1,8 +1,8 @@
 # 网页长截图分割工具
 
-[![PyPI - Version](https://img.shields.io/pypi/v/Web_page_Screenshot_Segmentation)](https://pypi.org/project/Web_page_Screenshot_Segmentation/)
+[![PyPI - Version](https://img.shields.io/pypi/v/long-screenshot-segmentation)](https://pypi.org/project/long-screenshot-segmentation/)
 [![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Tinnci/Long-Screenshot-Segmentation/python-publish.yml)](https://github.com/Tinnci/Long-Screenshot-Segmentation/actions/workflows/python-publish.yml)
-[![PyPI - License](https://img.shields.io/pypi/l/Web_page_Screenshot_Segmentation)](https://pypi.org/project/Web_page_Screenshot_Segmentation/)
+[![PyPI - License](https://img.shields.io/pypi/l/long-screenshot-segmentation)](https://pypi.org/project/long-screenshot-segmentation/)
 [![Static Badge](https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-8A2BE2)](README-ZH.md)
 [![Static Badge](https://img.shields.io/badge/English-blue)](README.md)
 
