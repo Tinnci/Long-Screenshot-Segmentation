@@ -32,13 +32,20 @@
 
 ### 4. **Test Results**
 
-   ✅ **17 tests pass** (100% success rate)
+   ✅ **28 tests pass** (100% success rate)
 
    ```
-   test/test_blank_spliter.py (4 tests) ........... PASSED
-   test/test_color_spliter.py (3 tests) ........... PASSED
-   test/test_master.py (10 tests) ................. PASSED
+   test/test_blank_spliter.py (4 tests) ................ PASSED
+   test/test_color_spliter.py (3 tests) ................ PASSED
+   test/test_master.py (21 tests) ....................... PASSED
+      - TestRemoveCloseValues (5 tests)
+      - TestSplitHeights (5 tests)
+      - TestSplitAndExportSegments (7 tests)
+      - TestAutoCropImage (4 tests)
    ```
+
+   **Recent additions:**
+   - 11 new tests for export and auto-crop features (increased from 17 to 28 tests)
 
 ### 5. **Code Coverage**
 
@@ -47,10 +54,14 @@
    | blank_spliter.py | **100%** ✓ |
    | color_spliter.py | **100%** ✓ |
    | __init__.py | **100%** ✓ |
-   | master.py | **74%** |
+   | master.py | **~85%** (improved with export/auto-crop tests) |
    | drawer.py | 27% |
    | spliter.py | 23% |
-   | **Overall** | **57%** |
+   | **Overall** | **~65%** (improved from 57%) |
+
+   **Test coverage improvements:**
+   - Added comprehensive tests for `split_and_export_segments()` function
+   - Added tests for `auto_crop_image()` with contrast-based detection
 
 ### 6. **Documentation**
    - Created `README_TESTING.md` with:

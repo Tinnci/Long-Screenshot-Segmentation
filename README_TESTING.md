@@ -81,20 +81,24 @@ Then open `htmlcov/index.html` in your browser.
 
 Tests are organized in the `test/` directory:
 
-- **`test_master.py`** — Tests for image loading and split height detection
-  - `TestRemoveCloseValues` — Tests for the helper function
-  - `TestSplitHeights` — Tests for main splitting function with Unicode file path support
+- **`test_master.py`** — Tests for image loading, split height detection, and segmentation export
+  - `TestRemoveCloseValues` — Tests for the helper function (5 tests)
+  - `TestSplitHeights` — Tests for main splitting function with Unicode file path support (5 tests)
+  - `TestSplitAndExportSegments` — Tests for segment export functionality (7 tests)
+  - `TestAutoCropImage` — Tests for auto-crop feature (4 tests)
 
 - **`test_blank_spliter.py`** — Tests for blank region detection
-  - `TestBlankSpliter` — Tests for low variation region detection
+  - `TestBlankSpliter` — Tests for low variation region detection (4 tests)
 
 - **`test_color_spliter.py`** — Tests for color-based splitting
-  - `TestColorSpliter` — Tests for color height detection
+  - `TestColorSpliter` — Tests for color height detection (3 tests)
 
 - **`conftest.py`** — Pytest configuration and shared fixtures
   - `test_images_dir` — Path to test images
   - `sample_image_path` — Fixture providing a test image
   - `unicode_image_path` — Fixture for testing Unicode filename support
+
+**Total: 28 tests**
 
 ## Test Markers
 
@@ -118,17 +122,22 @@ pytest -m "not slow"
 
 ## Current Coverage
 
-Current test coverage:
+Current test coverage and test count:
 
-| Module | Coverage |
-|--------|----------|
-| blank_spliter.py | 100% |
-| color_spliter.py | 100% |
-| master.py | 74% |
-| __init__.py | 100% |
-| drawer.py | 27% |
-| spliter.py | 23% |
-| **Overall** | **57%** |
+| Module | Coverage | Tests |
+|--------|----------|-------|
+| blank_spliter.py | 100% | 4 |
+| color_spliter.py | 100% | 3 |
+| master.py | ~85% | 16 |
+| __init__.py | 100% | - |
+| drawer.py | 27% | - |
+| spliter.py | 23% | - |
+| **Overall** | **~65%** | **28** |
+
+**New in this version:**
+- Added 7 tests for `split_and_export_segments()` function
+- Added 4 tests for `auto_crop_image()` function (contrast-based content detection)
+- Total tests increased from 17 to 28
 
 ## Adding New Tests
 

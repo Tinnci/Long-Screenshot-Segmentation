@@ -63,6 +63,12 @@ screenshot-segment -f "C:\path\to\image.png"
 # 保存带有分割线的图像
 screenshot-segment -f "C:\path\to\image.png" -s True
 
+# 导出分割区域为单独的图像
+screenshot-segment -f "C:\path\to\image.png" -e True
+
+# 导出分割区域并自动裁剪空白边缘
+screenshot-segment -f "C:\path\to\image.png" -e True -crop True
+
 # 自定义阈值
 screenshot-segment -f "C:\path\to\image.png" \
   -ht 150 \
@@ -72,14 +78,19 @@ screenshot-segment -f "C:\path\to\image.png" \
 ```
 
 **参数说明：**
-- `-f, --file`: 图像文件路径
-- `-s, --split`: 是否保存分割后的图像（默认: False）
+- `-f, --file`: 图像文件路径（必需）
+- `-s, --split`: 是否保存带分割线的图像（默认: False）
 - `-o, --output_dir`: 输出目录（默认: result）
 - `-ht, --height_threshold`: 空白区域高度阈值（默认: 102）
 - `-vt, --variation_threshold`: 变化阈值（默认: 0.5）
 - `-ct, --color_threshold`: 颜色差异阈值（默认: 100）
 - `-cvt, --color_variation_threshold`: 颜色差异变化阈值（默认: 15）
 - `-mt, --merge_threshold`: 分割点合并距离（默认: 350）
+- `-e, --export`: 是否导出分割区域为单独图像（默认: False）
+- `-seg, --segments_dir`: 分割图像保存目录（默认: segments）
+- `-crop, --auto_crop`: 是否自动裁剪空白边缘（默认: False）
+- `-crop_t, --crop_threshold`: 空白区域检测阈值 (0-255，默认: 240)
+- `-crop_h, --crop_min_width`: 裁剪后保留的最小宽度（默认: 50）
 
 ### screenshot-draw（绘制分割线）
 
@@ -118,6 +129,44 @@ result_path = split_heights(
 print(f"图像已保存到: {result_path}")
 ```
 
+### 方法 2: split_and_export_segments（导出分割区域）
+
+```python
+from Web_page_Screenshot_Segmentation.master import split_and_export_segments
+
+# 导出所有分割区域为单独的图像
+output_dir = split_and_export_segments(
+    "my_screenshot.png",
+    output_dir="segments"
+)
+print(f"分割区域已保存到: {output_dir}")
+
+# 导出分割区域并自动裁剪空白边缘
+output_dir = split_and_export_segments(
+    "my_screenshot.png",
+    output_dir="segments_cropped",
+    auto_crop=True,
+    crop_threshold=240,
+    crop_min_width=50
+)
+print(f"裁剪后的分割区域已保存到: {output_dir}")
+```
+
+**参数说明：**
+- `file_path`: 图像文件路径
+- `output_dir`: 分割图像保存目录（默认: segments）
+- `auto_crop`: 是否移除空白边缘（默认: False）
+- `crop_threshold`: 空白区域检测阈值 (0-255，默认: 240)
+- `crop_min_width`: 裁剪后保留的最小宽度（默认: 50）
+- `height_threshold`, `variation_threshold`, `color_threshold`, `color_variation_threshold`, `merge_threshold`: 同 `split_heights` 中的参数
+
+**自动裁剪算法：**
+自动裁剪功能通过分析以下特征来智能检测内容：
+1. **像素方差** — 文本和图形具有像素值变化
+2. **深色像素** — 内容通常比白色背景暗
+
+任何具有显著方差或深色像素的列都会被保留。只有真正的空白列才会被删除。
+
 ### 方法 2: draw_line_from_file（绘制分割线）
 
 ```python
@@ -148,9 +197,12 @@ print(f"分割图像已保存到: {result_dir}")
 
 ## 特性
 
-✅ **Unicode 文件名支持** — 支持中文、日文等非 ASCII 文件名  
-✅ **灵活的阈值参数** — 可根据需求调整分割敏感度  
-✅ **多种输出格式** — 支持获取分割点、绘制分割线或直接切分  
+✅ **双重检测方法** — 结合空白区域检测和颜色变化检测，提高分割准确性  
+✅ **Unicode 文件名支持** — 支持中文、日文等非 ASCII 字符的文件名  
+✅ **分割导出功能** — 将分割后的区域保存为独立图像  
+✅ **智能自动裁剪** — 移除空白边缘，同时保留所有文本和内容  
+✅ **灵活的阈值参数** — 可根据不同图像类型调整检测灵敏度  
+✅ **多种输出格式** — 获取分割点、绘制分割线或导出分割图像  
 ✅ **跨平台兼容** — Windows、Linux、macOS 完全支持  
 
 ## 测试

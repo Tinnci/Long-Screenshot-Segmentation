@@ -1,14 +1,20 @@
 # Long Screenshot Segmentation
 
 [![PyPI - Version](https://img.shields.io/pypi/v/Web_page_Screenshot_Segmentation)](https://pypi.org/project/Web_page_Screenshot_Segmentation/)
-[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Ryaang/Web-page-Screenshot-Segmentation/python-publish.yml)](https://github.com/Ryaang/Web-page-Screenshot-Segmentation/actions/workflows/python-publish.yml)
+[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Tinnci/Long-Screenshot-Segmentation/python-publish.yml)](https://github.com/Tinnci/Long-Screenshot-Segmentation/actions/workflows/python-publish.yml)
 [![PyPI - License](https://img.shields.io/pypi/l/Web_page_Screenshot_Segmentation)](https://pypi.org/project/Web_page_Screenshot_Segmentation/)
 [![Static Badge](https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-8A2BE2)](README-ZH.md)
 [![Static Badge](https://img.shields.io/badge/English-blue)](README.md)
 
-This project provides a tool to segment long web page screenshots into smaller, more manageable images. This is particularly useful for tasks like training machine learning models on web page data or for use with tools like [screenshot-to-code](https://github.com/abi/screenshot-to-code).
+## Features
 
-![The Red lines are split lines](images/demo.png)
+- **Dual Detection Methods** — Combines blank space detection and color-based splitting for accurate segmentation
+- **Unicode File Support** — Handles filenames with Chinese characters and other non-ASCII characters
+- **Export Segments** — Save individual segmented areas as standalone images
+- **Auto-Crop** — Intelligently removes blank/white margins while preserving all text and content
+- **Flexible Thresholds** — Customize detection sensitivity for different image types
+- **Multiple Output Formats** — Get split points, draw lines, or export segments
+- **Cross-Platform** — Works on Windows, Linux, and macOS
 
 ## Methodology
 
@@ -51,21 +57,48 @@ This package provides three command-line tools for easy use:
 This is the main tool for finding the split points in an image.
 
 ```bash
-screenshot-segment <image_file> [--split] [--output_dir <dir>]
+screenshot-segment <image_file> [OPTIONS]
 ```
 
--   `<image_file>`: Path to the image file.
--   `--split`: If provided, the tool will save the image with the split lines drawn on it.
--   `--output_dir`: The directory to save the output image (default: `result`).
+**Options:**
+- `-f, --file`: Path to the image file (required)
+- `-s, --split`: Save image with split lines drawn (default: False)
+- `-o, --output_dir`: Output directory for split image (default: `result`)
+- `-ht, --height_threshold`: Blank area height threshold (default: 102)
+- `-vt, --variation_threshold`: Variation threshold (default: 0.5)
+- `-ct, --color_threshold`: Color difference threshold (default: 100)
+- `-cvt, --color_variation_threshold`: Color variation threshold (default: 15)
+- `-mt, --merge_threshold`: Minimum distance between split lines (default: 350)
+- `-e, --export`: Export segments as separate images (default: False)
+- `-seg, --segments_dir`: Directory to save segment images (default: `segments`)
+- `-crop, --auto_crop`: Auto-crop blank areas from segment edges (default: False)
+- `-crop_t, --crop_threshold`: Threshold for detecting blank areas (default: 240)
+- `-crop_h, --crop_min_width`: Minimum width to preserve after cropping (default: 50)
 
-**Example:**
+**Examples:**
 
 ```bash
 # Get the split points for an image
 screenshot-segment my_screenshot.png
 
 # Save the image with the split lines drawn
-screenshot-segment my_screenshot.png --split
+screenshot-segment my_screenshot.png -s True
+
+# Export segments as separate images
+screenshot-segment my_screenshot.png -e True
+
+# Export segments with auto-crop to remove blank margins
+screenshot-segment my_screenshot.png -e True -crop True
+
+# Custom parameters
+screenshot-segment my_screenshot.png \
+  -ht 150 \
+  -vt 0.3 \
+  -ct 120 \
+  -mt 400 \
+  -e True \
+  -crop True \
+  -crop_t 230
 ```
 
 #### `screenshot-draw`
@@ -124,6 +157,46 @@ print(heights)
 result_path = split_heights("my_screenshot.png", split=True)
 print(f"Image saved to: {result_path}")
 ```
+
+### `split_and_export_segments`
+
+Export segmented areas as separate standalone images, with optional auto-crop.
+
+```python
+from Web_page_Screenshot_Segmentation.master import split_and_export_segments
+
+# Export all segments without cropping
+output_dir = split_and_export_segments(
+    "my_screenshot.png",
+    output_dir="segments"
+)
+print(f"Segments saved to: {output_dir}")
+
+# Export with auto-crop to remove blank margins
+output_dir = split_and_export_segments(
+    "my_screenshot.png",
+    output_dir="segments_cropped",
+    auto_crop=True,
+    crop_threshold=240,
+    crop_min_width=50
+)
+print(f"Cropped segments saved to: {output_dir}")
+```
+
+**Parameters:**
+- `file_path`: Path to the image file
+- `output_dir`: Directory to save segments (default: `segments`)
+- `auto_crop`: Whether to remove blank areas (default: False)
+- `crop_threshold`: Pixel threshold for blank detection (0-255, default: 240)
+- `crop_min_width`: Minimum width to preserve (default: 50)
+- `height_threshold`, `variation_threshold`, `color_threshold`, `color_variation_threshold`, `merge_threshold`: Same as `split_heights`
+
+**Auto-Crop Algorithm:**
+The auto-crop feature intelligently detects content by analyzing:
+1. **Pixel Variance** — Text and graphics have varying pixel values
+2. **Dark Pixels** — Content is typically darker than the white background
+
+Any column with significant variance or dark pixels is preserved. Only truly blank columns are removed.
 
 #### `draw_line_from_file`
 
