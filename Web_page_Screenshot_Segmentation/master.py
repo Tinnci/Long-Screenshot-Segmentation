@@ -108,6 +108,87 @@ def split_heights(
         return heights
 
 
+def split_and_export_segments(
+    file_path: str,
+    output_dir: str = "segments",
+    height_threshold: int = 102,
+    variation_threshold: float = 0.5,
+    color_threshold: int = 100,
+    color_variation_threshold: int = 15,
+    merge_threshold: int = 350,
+) -> str:
+    """
+    Detects split points and exports each segmented area as a standalone image.
+
+    This function analyzes an image to find horizontal split points, then saves
+    each segmented area as an individual image file in the output directory.
+
+    :param file_path: Path to the image file.
+    :param output_dir: The directory to save the segmented images (default: 'segments').
+    :param height_threshold: The height threshold for low variation regions.
+    :param variation_threshold: The variation threshold for low variation regions.
+    :param color_threshold: The threshold for color differences.
+    :param color_variation_threshold: The threshold for color difference variations.
+    :param merge_threshold: The minimum distance between two split lines.
+    :return: The absolute path to the output directory containing all segments.
+    """
+    # Get split heights
+    heights = split_heights(
+        file_path,
+        split=False,
+        height_threshold=height_threshold,
+        variation_threshold=variation_threshold,
+        color_threshold=color_threshold,
+        color_variation_threshold=color_variation_threshold,
+        merge_threshold=merge_threshold,
+    )
+
+    # Read the image
+    try:
+        img_data = np.fromfile(file_path, np.uint8)
+        img = cv2.imdecode(img_data, cv2.IMREAD_COLOR)
+        if img is None:
+            raise FileNotFoundError(
+                f"Image not found or could not be decoded at path: {file_path}"
+            )
+    except Exception as e:
+        raise IOError(f"Failed to read image file: {e}")
+
+    # Create output directory
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Get original filename without extension
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
+
+    # Split and save segments
+    img_height = img.shape[0]
+    split_heights_list = sorted(list(set([0] + heights + [img_height])))
+
+    segment_count = 0
+    for i in range(len(split_heights_list) - 1):
+        start_y = split_heights_list[i]
+        end_y = split_heights_list[i + 1]
+
+        # Extract segment
+        segment = img[start_y:end_y, :]
+
+        # Save segment with descriptive name
+        segment_filename = f"{base_name}_segment_{segment_count:03d}.jpg"
+        segment_path = os.path.join(output_dir, segment_filename)
+
+        # Use imencode + binary write for Unicode filename support
+        success, encoded_img = cv2.imencode(".jpg", segment)
+        if success:
+            with open(segment_path, "wb") as f:
+                f.write(encoded_img)
+            segment_count += 1
+        else:
+            raise IOError(f"Failed to encode image for writing to {segment_path}")
+
+    print(f"✓ Exported {segment_count} segments to: {os.path.abspath(output_dir)}")
+    return os.path.abspath(output_dir)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", type=str, help="path of the image file")
@@ -156,17 +237,45 @@ def main():
         default=350,
         help="the threshold of the least distance between two lines",
     )
-    args = parser.parse_args()
-    res = split_heights(
-        args.file,
-        args.split,
-        args.output_dir,
-        args.height_threshold,
-        args.variation_threshold,
-        args.color_threshold,
-        args.color_variation_threshold,
-        args.merge_threshold,
+    parser.add_argument(
+        "-e",
+        "--export",
+        type=bool,
+        default=False,
+        help="whether to export segmented areas as separate images",
     )
+    parser.add_argument(
+        "-seg",
+        "--segments_dir",
+        type=str,
+        default="segments",
+        help="the directory to save segmented images (used with --export)",
+    )
+    args = parser.parse_args()
+
+    if args.export:
+        # Export segments
+        res = split_and_export_segments(
+            args.file,
+            args.segments_dir,
+            args.height_threshold,
+            args.variation_threshold,
+            args.color_threshold,
+            args.color_variation_threshold,
+            args.merge_threshold,
+        )
+    else:
+        # Original behavior: get split heights or split image
+        res = split_heights(
+            args.file,
+            args.split,
+            args.output_dir,
+            args.height_threshold,
+            args.variation_threshold,
+            args.color_threshold,
+            args.color_variation_threshold,
+            args.merge_threshold,
+        )
     print(res)
 
 
