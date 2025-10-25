@@ -41,6 +41,51 @@ def remove_close_values(
     return result
 
 
+def auto_crop_image(
+    image: np.ndarray, threshold: int = 240, min_height: int = 50
+) -> np.ndarray:
+    """
+    Automatically crops blank/white areas from image edges.
+
+    This function removes mostly blank (white or near-white) rows from the top
+    and bottom of an image. Useful for removing empty space from segmented areas.
+
+    :param image: The input image as a NumPy array (BGR format).
+    :param threshold: Pixel value threshold for detecting blank rows (0-255).
+                      Rows where all pixels are above this value are considered blank.
+    :param min_height: Minimum height to keep (prevents over-cropping).
+    :return: The cropped image.
+    """
+    if image.shape[0] <= min_height:
+        return image
+
+    # Convert to grayscale for analysis
+    if len(image.shape) == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image
+
+    # Find rows where most pixels are "blank" (high values)
+    row_means = gray.mean(axis=1)
+    blank_rows = row_means > threshold
+
+    # Find first and last non-blank rows
+    non_blank_indices = np.where(~blank_rows)[0]
+
+    if len(non_blank_indices) == 0:
+        # All blank, return original
+        return image
+
+    top = non_blank_indices[0]
+    bottom = non_blank_indices[-1] + 1
+
+    # Ensure minimum height
+    if bottom - top < min_height:
+        return image
+
+    return image[top:bottom, :]
+
+
 def split_heights(
     file_path: str,
     split: bool = False,
@@ -116,12 +161,16 @@ def split_and_export_segments(
     color_threshold: int = 100,
     color_variation_threshold: int = 15,
     merge_threshold: int = 350,
+    auto_crop: bool = False,
+    crop_threshold: int = 240,
+    crop_min_height: int = 50,
 ) -> str:
     """
     Detects split points and exports each segmented area as a standalone image.
 
     This function analyzes an image to find horizontal split points, then saves
     each segmented area as an individual image file in the output directory.
+    Optionally applies auto-cropping to remove blank areas from segments.
 
     :param file_path: Path to the image file.
     :param output_dir: The directory to save the segmented images (default: 'segments').
@@ -130,6 +179,9 @@ def split_and_export_segments(
     :param color_threshold: The threshold for color differences.
     :param color_variation_threshold: The threshold for color difference variations.
     :param merge_threshold: The minimum distance between two split lines.
+    :param auto_crop: Whether to auto-crop blank areas from segments (default: False).
+    :param crop_threshold: Pixel threshold for detecting blank areas (0-255, default: 240).
+    :param crop_min_height: Minimum height to preserve after cropping (default: 50).
     :return: The absolute path to the output directory containing all segments.
     """
     # Get split heights
@@ -165,12 +217,22 @@ def split_and_export_segments(
     split_heights_list = sorted(list(set([0] + heights + [img_height])))
 
     segment_count = 0
+    cropped_count = 0
     for i in range(len(split_heights_list) - 1):
         start_y = split_heights_list[i]
         end_y = split_heights_list[i + 1]
 
         # Extract segment
         segment = img[start_y:end_y, :]
+
+        # Apply auto-crop if enabled
+        if auto_crop:
+            cropped_segment = auto_crop_image(
+                segment, threshold=crop_threshold, min_height=crop_min_height
+            )
+            if cropped_segment.shape[0] != segment.shape[0]:
+                segment = cropped_segment
+                cropped_count += 1
 
         # Save segment with descriptive name
         segment_filename = f"{base_name}_segment_{segment_count:03d}.jpg"
@@ -185,7 +247,10 @@ def split_and_export_segments(
         else:
             raise IOError(f"Failed to encode image for writing to {segment_path}")
 
-    print(f"✓ Exported {segment_count} segments to: {os.path.abspath(output_dir)}")
+    message = f"✓ Exported {segment_count} segments to: {os.path.abspath(output_dir)}"
+    if auto_crop:
+        message += f" (auto-cropped {cropped_count} segments)"
+    print(message)
     return os.path.abspath(output_dir)
 
 
@@ -251,10 +316,31 @@ def main():
         default="segments",
         help="the directory to save segmented images (used with --export)",
     )
+    parser.add_argument(
+        "-crop",
+        "--auto_crop",
+        type=bool,
+        default=False,
+        help="whether to auto-crop blank areas from segments (only with --export)",
+    )
+    parser.add_argument(
+        "-crop_t",
+        "--crop_threshold",
+        type=int,
+        default=240,
+        help="pixel threshold for detecting blank areas (0-255, higher=more aggressive)",
+    )
+    parser.add_argument(
+        "-crop_h",
+        "--crop_min_height",
+        type=int,
+        default=50,
+        help="minimum height to preserve after cropping",
+    )
     args = parser.parse_args()
 
     if args.export:
-        # Export segments
+        # Export segments with optional auto-crop
         res = split_and_export_segments(
             args.file,
             args.segments_dir,
@@ -263,6 +349,9 @@ def main():
             args.color_threshold,
             args.color_variation_threshold,
             args.merge_threshold,
+            args.auto_crop,
+            args.crop_threshold,
+            args.crop_min_height,
         )
     else:
         # Original behavior: get split heights or split image

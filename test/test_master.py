@@ -7,6 +7,7 @@ from Web_page_Screenshot_Segmentation.master import (
     split_heights,
     remove_close_values,
     split_and_export_segments,
+    auto_crop_image,
 )
 
 
@@ -188,3 +189,83 @@ class TestSplitAndExportSegments:
 
         with pytest.raises(IOError):
             split_and_export_segments("/nonexistent/path/image.png", output_dir)
+
+    @pytest.mark.unit
+    def test_split_and_export_segments_with_auto_crop(
+        self, sample_image_path, tmp_path
+    ):
+        """Test that auto_crop parameter is accepted and processed."""
+        output_dir = str(tmp_path / "segments")
+
+        result = split_and_export_segments(
+            sample_image_path,
+            output_dir=output_dir,
+            auto_crop=True,
+            crop_threshold=240,
+            crop_min_height=50,
+        )
+
+        # Should still return valid path
+        assert isinstance(result, str)
+        assert Path(result).exists()
+
+
+class TestAutoCropImage:
+    """Tests for the auto_crop_image function."""
+
+    @pytest.fixture
+    def blank_padded_image(self):
+        """Create test image with blank (white) padding on top and bottom."""
+        # Create a simple image: white padding + content + white padding
+        img = np.ones((300, 200, 3), dtype=np.uint8) * 255  # All white
+
+        # Add content in the middle (gray/darker area)
+        img[100:200, :] = [100, 100, 100]  # Gray content
+
+        return img
+
+    @pytest.mark.unit
+    def test_auto_crop_image_removes_blank_rows(self, blank_padded_image):
+        """Test that auto_crop removes blank rows from top and bottom."""
+        original_height = blank_padded_image.shape[0]
+        cropped = auto_crop_image(blank_padded_image, threshold=240)
+
+        # Should be smaller after cropping
+        assert cropped.shape[0] < original_height
+        # Should preserve middle content
+        assert cropped.shape[0] >= 100
+
+    @pytest.mark.unit
+    def test_auto_crop_image_preserves_min_height(self):
+        """Test that auto_crop respects minimum height."""
+        # Create small image
+        small_img = np.ones((30, 50, 3), dtype=np.uint8) * 255
+        small_img[10:20, :] = [100, 100, 100]
+
+        cropped = auto_crop_image(small_img, min_height=50)
+
+        # Should not be cropped below min_height
+        assert cropped.shape[0] >= 30  # Returns original if < min_height
+
+    @pytest.mark.unit
+    def test_auto_crop_image_with_all_blank(self):
+        """Test that auto_crop handles all-blank images gracefully."""
+        all_white = np.ones((100, 100, 3), dtype=np.uint8) * 255
+
+        cropped = auto_crop_image(all_white, threshold=240)
+
+        # Should return original (no non-blank rows found)
+        assert cropped.shape == all_white.shape
+
+    @pytest.mark.unit
+    def test_auto_crop_image_grayscale(self):
+        """Test that auto_crop works with grayscale images."""
+        # Create grayscale image with blank padding
+        img = np.ones((150, 100), dtype=np.uint8) * 255
+        img[50:100, :] = 100  # Gray content
+
+        cropped = auto_crop_image(img, threshold=240)
+
+        # Should crop successfully
+        assert cropped.shape[0] < 150
+        assert len(cropped.shape) == 2  # Still grayscale
