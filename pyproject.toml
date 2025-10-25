@@ -6,27 +6,35 @@ build-backend = "setuptools.build_meta"
 name = "Web_page_Screenshot_Segmentation"
 version = "1.1.0"
 authors = [
-  { name= "Tim Saijun", email = "code@zair.top"},
+  { name = "Tinnci", email = "t88444281@gmail.com" },
 ]
 description = "Divide long web page screenshots into blocks to input models with shorter contexts. 将长网页截图进行区块分割，用于输入上下文较短的模型"
 readme = "README.md"
-license = { file="LICENSE" }
+license = {text = "MIT"}
 requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+    "Topic :: Office/Business",
+    "Intended Audience :: Developers",
 ]
-keywords = ["opencv", "website", "image segementation", "screenshot", "gpt"]
+keywords = ["opencv", "website", "image segmentation", "screenshot", "gpt"]
 dependencies = [
-    "opencv-python",
-    "numpy",
-    "Pillow",
+    "opencv-python>=4.5",
+    "numpy>=1.20",
+    "Pillow>=8.0",
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/Tinnci/Long-Screenshot-Segmentation"
-"Documentation" = "https://tim-saijun.github.io/Web_page_Screenshot_Segmentation/"
+"Repository" = "https://github.com/Tinnci/Long-Screenshot-Segmentation"
+"Bug Tracker" = "https://github.com/Tinnci/Long-Screenshot-Segmentation/issues"
+"Upstream" = "https://github.com/Ryaang/Web-page-Screenshot-Segmentation"
 
 [project.optional-dependencies]
 dev = [
