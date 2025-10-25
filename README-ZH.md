@@ -33,12 +33,12 @@
 
 ### 使用 pip
 ```bash
-pip install Web-page-Screenshot-Segmentation
+pip install long-screenshot-segmentation
 ```
 
 ### 使用 uv（推荐）
 ```bash
-uv tool install Web-page-Screenshot-Segmentation
+uv tool install long-screenshot-segmentation
 ```
 
 ### 从源码安装

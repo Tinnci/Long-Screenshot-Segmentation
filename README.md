@@ -40,10 +40,16 @@ To install the package from this repository, navigate to the project's root dire
 pip install .
 ```
 
-Alternatively, for a more isolated and efficient installation of the command-line tools, you can use `uv tool install` from the project's root directory:
+Or install directly from PyPI:
 
 ```bash
-uv tool install .
+pip install long-screenshot-segmentation
+```
+
+Alternatively, for a more isolated and efficient installation of the command-line tools, you can use `uv tool install`:
+
+```bash
+uv tool install long-screenshot-segmentation
 ```
 
 ## Usage
