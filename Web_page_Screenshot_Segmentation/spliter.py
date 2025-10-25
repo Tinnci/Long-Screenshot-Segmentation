@@ -25,7 +25,13 @@ def split_and_save_image(image: np.ndarray, heights: list[int], output_dir: str)
     for i, end_y in enumerate(split_heights[1:]):
         img_slice = image[start_y:end_y, :]
         slice_path = os.path.join(output_dir, f"slice_{i}.png")
-        cv2.imwrite(slice_path, img_slice)
+        # Use imencode + binary write to handle Unicode filenames
+        success, encoded_img = cv2.imencode(".png", img_slice)
+        if success:
+            with open(slice_path, "wb") as f:
+                f.write(encoded_img)
+        else:
+            raise IOError(f"Failed to encode image for writing to {slice_path}")
         start_y = end_y
 
     return os.path.abspath(output_dir)

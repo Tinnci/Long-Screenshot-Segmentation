@@ -38,7 +38,14 @@ def draw_line_from_file(
     output_filename = f"{base_name}_result{ext}"
     output_path = os.path.join(output_dir, output_filename)
 
-    cv2.imwrite(output_path, image)
+    # Use imencode + binary write to handle Unicode filenames
+    success, encoded_img = cv2.imencode(ext if ext else ".jpg", image)
+    if success:
+        with open(output_path, "wb") as f:
+            f.write(encoded_img)
+    else:
+        raise IOError(f"Failed to encode image for writing to {output_path}")
+
     return os.path.abspath(output_path)
 
 

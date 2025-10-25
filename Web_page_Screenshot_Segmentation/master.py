@@ -95,7 +95,14 @@ def split_heights(
         output_filename = f"{base_name}_result.jpg"
         output_path = os.path.join(output_dir, output_filename)
 
-        cv2.imwrite(output_path, img)
+        # Use imencode + binary write to handle Unicode filenames
+        success, encoded_img = cv2.imencode(".jpg", img)
+        if success:
+            with open(output_path, "wb") as f:
+                f.write(encoded_img)
+        else:
+            raise IOError(f"Failed to encode image for writing to {output_path}")
+
         return os.path.abspath(output_path)
     else:
         return heights
