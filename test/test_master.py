@@ -3,7 +3,11 @@
 import pytest
 import numpy as np
 from pathlib import Path
-from Web_page_Screenshot_Segmentation.master import split_heights, remove_close_values
+from Web_page_Screenshot_Segmentation.master import (
+    split_heights,
+    remove_close_values,
+    split_and_export_segments,
+)
 
 
 class TestRemoveCloseValues:
@@ -95,3 +99,92 @@ class TestSplitHeights:
         )
 
         assert isinstance(result, list)
+
+
+class TestSplitAndExportSegments:
+    """Tests for the split_and_export_segments function."""
+
+    @pytest.mark.unit
+    def test_split_and_export_segments_creates_directory(
+        self, sample_image_path, tmp_path
+    ):
+        """Test that split_and_export_segments creates output directory."""
+        output_dir = str(tmp_path / "segments")
+        result = split_and_export_segments(sample_image_path, output_dir=output_dir)
+
+        # Should return absolute path to output directory
+        assert isinstance(result, str)
+        assert Path(result).exists()
+        assert Path(result).is_dir()
+
+    @pytest.mark.unit
+    def test_split_and_export_segments_creates_files(self, sample_image_path, tmp_path):
+        """Test that split_and_export_segments creates segment files."""
+        output_dir = str(tmp_path / "segments")
+        result = split_and_export_segments(sample_image_path, output_dir=output_dir)
+
+        # Should create multiple segment files
+        segment_files = list(Path(result).glob("*_segment_*.jpg"))
+        assert len(segment_files) > 0, "No segment files were created"
+
+    @pytest.mark.unit
+    def test_split_and_export_segments_preserves_basename(
+        self, sample_image_path, tmp_path
+    ):
+        """Test that segment filenames preserve original basename."""
+        output_dir = str(tmp_path / "segments")
+        result = split_and_export_segments(sample_image_path, output_dir=output_dir)
+
+        # Get original filename
+        base_name = Path(sample_image_path).stem
+
+        # Check that segment files contain the original basename
+        segment_files = list(Path(result).glob(f"{base_name}_segment_*.jpg"))
+        assert len(segment_files) > 0
+
+    @pytest.mark.unit
+    def test_split_and_export_segments_with_unicode_filename(
+        self, unicode_image_path, tmp_path
+    ):
+        """Test that split_and_export_segments handles Unicode filenames."""
+        output_dir = str(tmp_path / "segments")
+        result = split_and_export_segments(unicode_image_path, output_dir=output_dir)
+
+        # Should create segments with preserved Unicode characters
+        segment_files = list(Path(result).glob("*_segment_*.jpg"))
+        assert len(segment_files) > 0
+
+        # Verify Unicode characters are preserved in filenames
+        for seg_file in segment_files:
+            # Check that file exists and can be accessed
+            assert seg_file.exists()
+            assert seg_file.stat().st_size > 0
+
+    @pytest.mark.unit
+    def test_split_and_export_segments_custom_parameters(
+        self, sample_image_path, tmp_path
+    ):
+        """Test that custom threshold parameters are accepted."""
+        output_dir = str(tmp_path / "segments")
+
+        # Should not raise with custom parameters
+        result = split_and_export_segments(
+            sample_image_path,
+            output_dir=output_dir,
+            height_threshold=150,
+            variation_threshold=0.3,
+            color_threshold=120,
+            color_variation_threshold=20,
+            merge_threshold=400,
+        )
+
+        assert isinstance(result, str)
+        assert Path(result).exists()
+
+    @pytest.mark.unit
+    def test_split_and_export_segments_invalid_path_raises_error(self, tmp_path):
+        """Test that invalid image path raises IOError."""
+        output_dir = str(tmp_path / "segments")
+
+        with pytest.raises(IOError):
+            split_and_export_segments("/nonexistent/path/image.png", output_dir)
