@@ -2,6 +2,7 @@
 
 import pytest
 import numpy as np
+from pathlib import Path
 from Web_page_Screenshot_Segmentation.master import split_heights, remove_close_values
 
 
@@ -47,7 +48,7 @@ class TestSplitHeights:
     def test_split_heights_with_unicode_filename(self, unicode_image_path):
         """Test that split_heights can handle Unicode file paths."""
         result = split_heights(unicode_image_path)
-        
+
         # Should return a list of integers (split heights)
         assert isinstance(result, list)
         assert len(result) > 0
@@ -57,7 +58,7 @@ class TestSplitHeights:
     def test_split_heights_returns_list(self, sample_image_path):
         """Test that split_heights returns a list of integers."""
         result = split_heights(sample_image_path)
-        
+
         assert isinstance(result, list)
         assert all(isinstance(h, (int, np.integer)) for h in result)
 
@@ -72,7 +73,7 @@ class TestSplitHeights:
         """Test that split option saves output image."""
         output_dir = str(tmp_path / "output")
         result = split_heights(sample_image_path, split=True, output_dir=output_dir)
-        
+
         # Should return path string when split=True
         assert isinstance(result, str)
         assert result.endswith("_result.jpg")
@@ -92,9 +93,5 @@ class TestSplitHeights:
             color_variation_threshold=20,
             merge_threshold=400,
         )
-        
+
         assert isinstance(result, list)
-
-
-# Import Path for file existence check
-from pathlib import Path

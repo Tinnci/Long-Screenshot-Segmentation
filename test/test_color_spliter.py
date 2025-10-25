@@ -29,7 +29,7 @@ class TestColorSpliter:
         result1 = color_height_spliter(sample_image, 50, 15)
         result2 = color_height_spliter(sample_image, 100, 15)
         result3 = color_height_spliter(sample_image, 150, 15)
-        
+
         # All should return lists
         assert isinstance(result1, list)
         assert isinstance(result2, list)
@@ -40,7 +40,7 @@ class TestColorSpliter:
         """Test color_height_spliter with real image."""
         img_data = np.fromfile(sample_image_path, np.uint8)
         img = cv2.imdecode(img_data, cv2.IMREAD_COLOR)
-        
+
         result = color_height_spliter(img, 100, 15)
         assert isinstance(result, list)
         assert all(isinstance(h, (int, np.integer)) for h in result)

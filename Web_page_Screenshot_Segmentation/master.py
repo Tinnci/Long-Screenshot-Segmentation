@@ -74,7 +74,9 @@ def split_heights(
         img_data = np.fromfile(file_path, np.uint8)
         img = cv2.imdecode(img_data, cv2.IMREAD_COLOR)
         if img is None:
-            raise FileNotFoundError(f"Image not found or could not be decoded at path: {file_path}")
+            raise FileNotFoundError(
+                f"Image not found or could not be decoded at path: {file_path}"
+            )
     except Exception as e:
         raise IOError(f"Failed to read image file: {e}")
 

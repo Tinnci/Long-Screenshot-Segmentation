@@ -1,7 +1,6 @@
 """Pytest configuration and fixtures for Web_page_Screenshot_Segmentation tests."""
 
 import pytest
-import os
 from pathlib import Path
 
 
@@ -18,17 +17,17 @@ def sample_image_path(test_images_dir):
     chinese_image = test_images_dir / "16、奈氏图绘制.png"
     if chinese_image.exists():
         return str(chinese_image)
-    
+
     # Fallback to any PNG file in the directory
     for img_file in test_images_dir.glob("*.png"):
         return str(img_file)
-    
+
     # Fallback to any JPEG file
     for img_file in test_images_dir.glob("*.jpeg"):
         return str(img_file)
     for img_file in test_images_dir.glob("*.jpg"):
         return str(img_file)
-    
+
     pytest.skip("No test images found in images directory")
 
 

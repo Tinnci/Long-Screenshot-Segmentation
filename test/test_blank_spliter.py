@@ -3,7 +3,10 @@
 import pytest
 import cv2
 import numpy as np
-from Web_page_Screenshot_Segmentation.blank_spliter import find_low_variation_regions, find_height_spliter
+from Web_page_Screenshot_Segmentation.blank_spliter import (
+    find_low_variation_regions,
+    find_height_spliter,
+)
 
 
 class TestBlankSpliter:
@@ -30,7 +33,7 @@ class TestBlankSpliter:
         result1 = find_low_variation_regions(sample_image, 50, 0.5)
         result2 = find_low_variation_regions(sample_image, 100, 0.5)
         result3 = find_low_variation_regions(sample_image, 200, 0.5)
-        
+
         # All should return lists
         assert isinstance(result1, list)
         assert isinstance(result2, list)
@@ -47,7 +50,7 @@ class TestBlankSpliter:
         """Test find_height_spliter with real image."""
         img_data = np.fromfile(sample_image_path, np.uint8)
         img = cv2.imdecode(img_data, cv2.IMREAD_COLOR)
-        
+
         result = find_height_spliter(img, 102, 0.5)
         assert isinstance(result, list)
         assert all(isinstance(h, (int, np.integer)) for h in result)
