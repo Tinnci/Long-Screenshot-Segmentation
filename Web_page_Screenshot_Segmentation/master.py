@@ -47,13 +47,13 @@ def auto_crop_image(
     """
     Automatically crops blank/white areas from left and right edges using OpenCV.
 
-    This function uses OpenCV's morphological operations to intelligently identify
-    and remove blank (white or near-white) areas from the left and right sides of an image.
-    Conservative approach: tolerates some blank space to avoid cropping actual content.
+    This function intelligently identifies content (text/graphics with contrast) vs blank areas.
+    It detects columns with text/content by analyzing pixel contrast and variation, then
+    safely removes only columns that are truly blank. Content with any contrast is preserved.
 
     :param image: The input image as a NumPy array (BGR format).
     :param threshold: Pixel value threshold for detecting blank areas (0-255).
-                      Used to create binary mask where values >= threshold are considered blank.
+                      Used to identify truly blank (uniform) regions.
     :param min_width: Minimum width to keep (prevents over-cropping).
     :return: The cropped image with blank left/right edges removed.
     """
@@ -66,27 +66,28 @@ def auto_crop_image(
     else:
         gray = image.copy()
 
-    # Use Otsu's threshold for automatic thresholding - more robust
-    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-
-    # Invert so content (dark) is white for easier detection
-    binary = cv2.bitwise_not(binary)
-
-    # Apply morphological operations with vertical kernel for vertical content preservation
-    kernel_v = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 15))
+    # Detect content by finding columns with significant variation/contrast
+    # Text and graphics have variation, blank areas are uniform
+    col_variance = np.var(gray, axis=0)  # Variance of pixel values in each column
     
-    # Dilate to merge nearby content
-    binary = cv2.dilate(binary, kernel_v, iterations=3)
+    # Also check for columns with darker pixels (content is typically darker than white background)
+    col_min = np.min(gray, axis=0)  # Minimum pixel value in each column
 
-    # Analyze columns: sum pixels vertically to get column weights
-    col_sums = np.sum(binary, axis=0)
+    # A column has content if:
+    # 1. It has significant variance (text/graphics have varying pixel values)
+    # 2. OR it has darker pixels (min value significantly below threshold)
     
-    # Use a very conservative threshold - only crop columns that are completely blank
-    # Set threshold to 10% of max to be very lenient
-    col_threshold = np.max(col_sums) * 0.10
+    # Normalize variance to 0-1 range for comparison
+    max_variance = np.max(col_variance) if np.max(col_variance) > 0 else 1
+    normalized_variance = col_variance / max_variance
     
-    # Find columns with significant content
-    content_cols = np.where(col_sums > col_threshold)[0]
+    # Detect columns with content: high variance OR dark pixels present
+    has_variance = normalized_variance > 0.05  # At least 5% of max variance
+    has_dark_pixels = col_min < (threshold - 30)  # Pixels noticeably darker than threshold
+    has_content = has_variance | has_dark_pixels
+
+    # Find first and last columns with content
+    content_cols = np.where(has_content)[0]
 
     if len(content_cols) == 0:
         # No content found, return original
