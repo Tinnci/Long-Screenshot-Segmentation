@@ -28,10 +28,16 @@ After identifying all potential split points from both methods, the algorithm me
 
 ## Installation
 
-You can install the package from PyPI:
+To install the package from this repository, navigate to the project's root directory and run:
 
 ```bash
-pip install Web-page-Screenshot-Segmentation
+pip install .
+```
+
+Alternatively, for a more isolated and efficient installation of the command-line tools, you can use `uv tool install` from the project's root directory:
+
+```bash
+uv tool install .
 ```
 
 ## Usage
