@@ -42,48 +42,66 @@ def remove_close_values(
 
 
 def auto_crop_image(
-    image: np.ndarray, threshold: int = 240, min_height: int = 50
+    image: np.ndarray, threshold: int = 240, min_width: int = 50
 ) -> np.ndarray:
     """
-    Automatically crops blank/white areas from image edges.
+    Automatically crops blank/white areas from left and right edges using OpenCV.
 
-    This function removes mostly blank (white or near-white) rows from the top
-    and bottom of an image. Useful for removing empty space from segmented areas.
+    This function uses OpenCV's morphological operations and contour detection to
+    intelligently identify and remove blank (white or near-white) areas from the left
+    and right sides of an image. This is more robust than simple threshold detection.
 
     :param image: The input image as a NumPy array (BGR format).
-    :param threshold: Pixel value threshold for detecting blank rows (0-255).
-                      Rows where all pixels are above this value are considered blank.
-    :param min_height: Minimum height to keep (prevents over-cropping).
-    :return: The cropped image.
+    :param threshold: Pixel value threshold for detecting blank areas (0-255).
+                      Used to create binary mask where values >= threshold are considered blank.
+    :param min_width: Minimum width to keep (prevents over-cropping).
+    :return: The cropped image with blank left/right edges removed.
     """
-    if image.shape[0] <= min_height:
+    if image.shape[1] <= min_width:
         return image
 
     # Convert to grayscale for analysis
     if len(image.shape) == 3:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     else:
-        gray = image
+        gray = image.copy()
 
-    # Find rows where most pixels are "blank" (high values)
-    row_means = gray.mean(axis=1)
-    blank_rows = row_means > threshold
+    # Create binary mask: white/blank areas are foreground (255)
+    _, binary = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
 
-    # Find first and last non-blank rows
-    non_blank_indices = np.where(~blank_rows)[0]
+    # Use morphological operations to clean up noise
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 5))
+    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=1)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=1)
 
-    if len(non_blank_indices) == 0:
-        # All blank, return original
+    # Find contours to detect content regions
+    contours, _ = cv2.findContours(
+        cv2.bitwise_not(binary), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
+
+    if not contours:
+        # No content found, return original
         return image
 
-    top = non_blank_indices[0]
-    bottom = non_blank_indices[-1] + 1
+    # Get bounding boxes of all contours and find the leftmost and rightmost
+    x_coords = []
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        if w > 0 and h > 0:  # Valid contour
+            x_coords.append(x)
+            x_coords.append(x + w)
 
-    # Ensure minimum height
-    if bottom - top < min_height:
+    if not x_coords:
         return image
 
-    return image[top:bottom, :]
+    left = max(0, min(x_coords))
+    right = min(image.shape[1], max(x_coords))
+
+    # Ensure minimum width
+    if right - left < min_width:
+        return image
+
+    return image[:, left:right]
 
 
 def split_heights(
@@ -163,14 +181,14 @@ def split_and_export_segments(
     merge_threshold: int = 350,
     auto_crop: bool = False,
     crop_threshold: int = 240,
-    crop_min_height: int = 50,
+    crop_min_width: int = 50,
 ) -> str:
     """
     Detects split points and exports each segmented area as a standalone image.
 
     This function analyzes an image to find horizontal split points, then saves
     each segmented area as an individual image file in the output directory.
-    Optionally applies auto-cropping to remove blank areas from segments.
+    Optionally applies auto-cropping to remove blank (white) areas from left and right edges.
 
     :param file_path: Path to the image file.
     :param output_dir: The directory to save the segmented images (default: 'segments').
@@ -179,9 +197,9 @@ def split_and_export_segments(
     :param color_threshold: The threshold for color differences.
     :param color_variation_threshold: The threshold for color difference variations.
     :param merge_threshold: The minimum distance between two split lines.
-    :param auto_crop: Whether to auto-crop blank areas from segments (default: False).
+    :param auto_crop: Whether to auto-crop blank areas from left/right edges (default: False).
     :param crop_threshold: Pixel threshold for detecting blank areas (0-255, default: 240).
-    :param crop_min_height: Minimum height to preserve after cropping (default: 50).
+    :param crop_min_width: Minimum width to preserve after cropping (default: 50).
     :return: The absolute path to the output directory containing all segments.
     """
     # Get split heights
@@ -228,9 +246,9 @@ def split_and_export_segments(
         # Apply auto-crop if enabled
         if auto_crop:
             cropped_segment = auto_crop_image(
-                segment, threshold=crop_threshold, min_height=crop_min_height
+                segment, threshold=crop_threshold, min_width=crop_min_width
             )
-            if cropped_segment.shape[0] != segment.shape[0]:
+            if cropped_segment.shape[1] != segment.shape[1]:
                 segment = cropped_segment
                 cropped_count += 1
 
@@ -321,7 +339,7 @@ def main():
         "--auto_crop",
         type=bool,
         default=False,
-        help="whether to auto-crop blank areas from segments (only with --export)",
+        help="whether to auto-crop blank (white) areas from left/right edges of segments",
     )
     parser.add_argument(
         "-crop_t",
@@ -332,10 +350,10 @@ def main():
     )
     parser.add_argument(
         "-crop_h",
-        "--crop_min_height",
+        "--crop_min_width",
         type=int,
         default=50,
-        help="minimum height to preserve after cropping",
+        help="minimum width to preserve after cropping blank left/right edges",
     )
     args = parser.parse_args()
 
@@ -351,7 +369,7 @@ def main():
             args.merge_threshold,
             args.auto_crop,
             args.crop_threshold,
-            args.crop_min_height,
+            args.crop_min_width,
         )
     else:
         # Original behavior: get split heights or split image
