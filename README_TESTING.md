@@ -1,6 +1,6 @@
 # Testing Guide
 
-This document explains how to set up and run tests for the Web_page_Screenshot_Segmentation project.
+This document explains how to set up and run tests for the long-screenshot-segmentation project.
 
 ## Prerequisites
 

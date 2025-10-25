@@ -1,6 +1,6 @@
 # Publishing to PyPI
 
-This guide explains how to publish the Web_page_Screenshot_Segmentation package to PyPI.
+This guide explains how to publish the long-screenshot-segmentation package to PyPI.
 
 **Good news:** Your project is already well-configured for PyPI! This process is straightforward and takes ~10 minutes.
 
@@ -49,8 +49,8 @@ twine check dist/*
 ```
 
 This creates:
-- `dist/Web_page_Screenshot_Segmentation-1.1.0-py3-none-any.whl` (wheel)
-- `dist/Web_page_Screenshot_Segmentation-1.1.0.tar.gz` (source distribution)
+- `dist/long_screenshot_segmentation-1.1.0-py3-none-any.whl` (wheel)
+- `dist/long-screenshot-segmentation-1.1.0.tar.gz` (source distribution)
 
 ### Step 2: Upload to PyPI
 
@@ -100,12 +100,12 @@ twine upload dist/*
 
 ### Step 3: Verify Upload
 
-1. Visit https://pypi.org/project/Web_page_Screenshot_Segmentation/
+1. Visit https://pypi.org/project/long-screenshot-segmentation/
 2. Confirm your package appears
 3. Test installation:
 
 ```bash
-pip install Web_page_Screenshot_Segmentation==1.1.0
+pip install long-screenshot-segmentation==1.1.0
 ```
 
 ## Testing on TestPyPI First (Optional but Recommended)
@@ -119,7 +119,7 @@ TestPyPI is a safe environment to test before uploading to the real PyPI:
 twine upload -r testpypi dist/*
 
 # Install from test
-pip install -i https://test.pypi.org/simple/ Web_page_Screenshot_Segmentation==1.1.0
+pip install -i https://test.pypi.org/simple/ long-screenshot-segmentation==1.1.0
 ```
 
 ## For Future Updates
@@ -198,7 +198,7 @@ Then:
 - Ensure `readme = "README.md"` in `pyproject.toml` ✓ (You have this!)
 
 ### Package not installing
-- Check on https://pypi.org/project/Web_page_Screenshot_Segmentation/
+- Check on https://pypi.org/project/long-screenshot-segmentation/
 - PyPI caches for ~5 minutes; try again later
 - Verify CLI commands work: `screenshot-segment --help`
 
